@@ -51,8 +51,16 @@ Future<BuildContext> _pumpPage(
   return tester.element(find.byType(_Page));
 }
 
-TutorialItem _item({TutorialBarrier? barrier, String text = 'Step'}) =>
-    TutorialItem(targetKey: _targetKey, description: text, barrier: barrier);
+TutorialItem _item({
+  TutorialBarrier? barrier,
+  String text = 'Step',
+  bool nextOnTargetTouch = false,
+}) => TutorialItem(
+  targetKey: _targetKey,
+  description: text,
+  barrier: barrier,
+  nextOnTargetTouch: nextOnTargetTouch,
+);
 
 void main() {
   group('barrier', () {
@@ -118,6 +126,109 @@ void main() {
 
       await tester.tap(find.byKey(_targetKey));
       expect(taps.value, 1);
+    });
+  });
+
+  group('nextOnTargetTouch', () {
+    final target = find.byKey(_targetKey);
+
+    Future<TutorialSession> start(
+      WidgetTester tester, {
+      required ValueNotifier<int> taps,
+      TutorialBarrier barrier = TutorialBarrier.transparent,
+      bool nextOnTargetTouch = true,
+    }) async {
+      final context = await _pumpPage(tester, taps: taps);
+      final session = Tutorial(
+        barrier: barrier,
+        items: [
+          _item(text: 'one', nextOnTargetTouch: nextOnTargetTouch),
+          _item(text: 'two', nextOnTargetTouch: nextOnTargetTouch),
+        ],
+      ).start(context);
+      await tester.pumpAndSettle();
+      return session;
+    }
+
+    testWidgets('touching the target moves on, and the app gets the tap', (
+      tester,
+    ) async {
+      final taps = ValueNotifier(0);
+      final session = await start(tester, taps: taps);
+
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+
+      expect(taps.value, 1);
+      expect(session.step.value, 1);
+      expect(find.text('two'), findsOneWidget);
+    });
+
+    testWidgets('touching the target on the last step completes it', (
+      tester,
+    ) async {
+      final session = await start(tester, taps: ValueNotifier(0));
+
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+
+      expect(session.isFinished, isTrue);
+      expect(await session.result, TutorialResult.completed);
+      expect(find.text('two'), findsNothing);
+    });
+
+    testWidgets('the start of a drag counts', (tester) async {
+      final session = await start(tester, taps: ValueNotifier(0));
+
+      final gesture = await tester.startGesture(tester.getCenter(target));
+      await tester.pump();
+      expect(session.step.value, 1);
+
+      await gesture.moveBy(const Offset(0, 120));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(session.step.value, 1);
+    });
+
+    testWidgets('an opaque barrier still keeps the touch from the app', (
+      tester,
+    ) async {
+      final taps = ValueNotifier(0);
+      final session = await start(
+        tester,
+        taps: taps,
+        barrier: TutorialBarrier.opaque,
+      );
+
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+
+      expect(taps.value, 0);
+      expect(session.step.value, 1);
+    });
+
+    testWidgets('touches beside the target do nothing', (tester) async {
+      final taps = ValueNotifier(0);
+      final session = await start(tester, taps: taps);
+
+      await tester.tapAt(const Offset(10, 500));
+      await tester.pumpAndSettle();
+
+      expect(taps.value, 10);
+      expect(session.step.value, 0);
+    });
+
+    testWidgets('is off unless asked for', (tester) async {
+      final taps = ValueNotifier(0);
+      final session = await start(tester, taps: taps, nextOnTargetTouch: false);
+
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+
+      expect(taps.value, 1);
+      expect(session.step.value, 0);
     });
   });
 

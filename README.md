@@ -21,14 +21,15 @@ cut-out, the pointer and the bubble.
   or builders that replace the bubble and the pointer with your own.
 - Barriers that let taps through the highlight, or everywhere, so the user
   can do what a step describes.
-- Steps moved on from code, for tutorials that wait for the user to act.
+- Steps moved on from code, for tutorials that wait for the user to act, or
+  by a touch on the highlight.
 - Tells you how it ended: completed, closed, or target not found.
 
 ## Getting started
 
 ```yaml
 dependencies:
-  flutter_tutorial_animated: ^0.2.0
+  flutter_tutorial_animated: ^0.3.0
 ```
 
 The tutorial uses Material widgets, so it needs a `MaterialApp` (or an
@@ -168,6 +169,20 @@ final session = Tutorial(
 
 // Later, when the tower is built:
 session.next();
+```
+
+Set `nextOnTargetTouch` on a step to move on as soon as the user touches
+its highlight, a tap or the start of a drag, so the bubble is out of the way
+while they act. With a barrier that lets the touch through, the app gets it
+too:
+
+```dart
+TutorialItem(
+  targetKey: _towerCardKey,
+  description: 'Drag a tower onto the map.',
+  barrier: TutorialBarrier.passThroughHighlight,
+  nextOnTargetTouch: true,
+),
 ```
 
 See [`example/`](example) for a complete app.

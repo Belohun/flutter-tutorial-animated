@@ -424,6 +424,19 @@ class _TutorialStepView extends StatelessWidget {
             ),
           ),
         ),
+        // Watches for a touch on the highlight without taking it, so the
+        // app below still gets it wherever the barrier lets it through.
+        // Always in the children list, for the reason given below.
+        Positioned.fromRect(
+          rect: target.inflate(style.highlightPadding),
+          child: IgnorePointer(
+            ignoring: !item.nextOnTargetTouch,
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => controller.next(),
+            ),
+          ),
+        ),
         // Always in the children list, even for steps without an animation:
         // dropping the slot would shift the bubble's subtree up a position and
         // rebuild it from scratch on every such step change.
