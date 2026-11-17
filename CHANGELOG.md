@@ -1,3 +1,22 @@
+## 0.2.0
+
+* `TutorialStyle.bubbleBuilder` builds the bubble in place of the default
+  one, from a `TutorialBubble` (the step, where the pointer meets the bubble,
+  and next / previous / close callbacks), so the bubble can match an app's
+  own look.
+* `TutorialStyle.pointerBuilder` and `pointerSize` replace the default
+  triangle; `pointerOverlap` tucks it under the bubble's edge.
+* `TutorialStyle.bubbleMaxWidth` keeps the bubble narrower than the screen,
+  centred on the pointer.
+* `TutorialItem.targetRect` highlights an area that is not a widget, such as
+  a sprite in a game, and follows it while it moves. `targetKey` is now
+  optional; give a step exactly one of the two.
+* `TutorialBarrier` (on `Tutorial` and per `TutorialItem`) lets taps through
+  the highlight, or everywhere but the bubble, so the user can do what a step
+  describes while it is shown.
+* `Tutorial.start` returns a `TutorialSession` that moves the tutorial on or
+  finishes it from code, for steps the app ends when the user has done them.
+
 ## 0.1.0
 
 * Initial release.

@@ -1,25 +1,47 @@
 import 'package:flutter/widgets.dart';
 
+import 'tutorial_barrier.dart';
+
 /// A single step of a [Tutorial].
 ///
-/// Each step highlights the widget that [targetKey] is attached to and shows
-/// [description] in a bubble that points at it.
+/// Each step highlights its target and shows [description] in a bubble that
+/// points at it. The target is either the widget [targetKey] is attached to,
+/// or the area [targetRect] reports, for things that are not widgets (a
+/// sprite in a game, a region of a canvas, ...).
 @immutable
 class TutorialItem {
-  /// Creates a tutorial step.
+  /// Creates a tutorial step. Give it exactly one of [targetKey] and
+  /// [targetRect].
   const TutorialItem({
-    required this.targetKey,
     required this.description,
+    this.targetKey,
+    this.targetRect,
+    this.barrier,
     this.beforeStep,
     this.animation,
     this.animationAnchorKey,
-  });
+  }) : assert(
+         (targetKey == null) != (targetRect == null),
+         'Give a TutorialItem either a targetKey or a targetRect',
+       );
 
   /// Key of the widget this step highlights.
   ///
   /// The widget must be laid out by the time the step is shown. Use
   /// [beforeStep] to bring it on screen first (for example by scrolling).
-  final GlobalKey targetKey;
+  final GlobalKey? targetKey;
+
+  /// Reports the area this step highlights, in global (screen) coordinates,
+  /// or `null` while it is not on screen.
+  ///
+  /// Use it for targets that are not widgets, such as a sprite in a game.
+  /// It is called on every frame while the step is shown, so the highlight,
+  /// the pointer and the bubble follow a target that moves.
+  final Rect? Function()? targetRect;
+
+  /// What the dimmed background does with taps during this step. Defaults
+  /// to [Tutorial.barrier].
+  final TutorialBarrier? barrier;
 
   /// Text shown in the bubble.
   final String description;
@@ -47,7 +69,7 @@ class TutorialItem {
 
   /// Widget the [animation] is horizontally centred on.
   ///
-  /// Defaults to [targetKey]. Point it at a smaller part of the target (for
+  /// Defaults to the target. Point it at a smaller part of the target (for
   /// example a drag handle) when the gesture starts there.
   final GlobalKey? animationAnchorKey;
 }

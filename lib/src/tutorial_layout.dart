@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 /// Gap between the highlighted widget and the tip of the pointer.
@@ -10,7 +12,7 @@ const double kTutorialHorizontalPadding = 24;
 /// pointer never sits on the bubble's rounded corner.
 const double kTutorialPointerToCornerMinDistance = 12;
 
-/// Size of the triangular pointer.
+/// Default size of the triangular pointer.
 const Size kTutorialPointerSize = Size(32, 28);
 
 /// Positions of the pointer and the description bubble for one step.
@@ -24,6 +26,7 @@ class TutorialLayout {
     required this.bubbleTop,
     required this.bubbleLeft,
     required this.bubbleRight,
+    required this.pointerX,
   });
 
   /// Lays out a step whose highlighted widget occupies [target] inside an
@@ -31,27 +34,34 @@ class TutorialLayout {
   ///
   /// Targets in the top half of the overlay get the bubble below them,
   /// targets in the bottom half get it above them ([flipped]).
+  ///
+  /// The bubble spans the overlay less [kTutorialHorizontalPadding] on each
+  /// side, or [bubbleMaxWidth] when that is narrower, centred on the
+  /// pointer. It overlaps the pointer by [pointerOverlap].
   factory TutorialLayout.compute({
     required Size overlaySize,
     required Rect target,
     required double bubbleHeight,
+    Size pointerSize = kTutorialPointerSize,
+    double pointerOverlap = 1,
+    double? bubbleMaxWidth,
   }) {
     final flipped = target.center.dy >= overlaySize.height / 2;
 
     final pointerTop = flipped
-        ? target.top - kTutorialVerticalPadding - kTutorialPointerSize.height
+        ? target.top - kTutorialVerticalPadding - pointerSize.height
         : target.bottom + kTutorialVerticalPadding;
-    final pointerLeft = target.center.dx - kTutorialPointerSize.width / 2;
+    final pointerLeft = target.center.dx - pointerSize.width / 2;
 
-    // The bubble overlaps the pointer by a pixel so no hairline shows between
-    // them.
     final bubbleTop = flipped
-        ? pointerTop - bubbleHeight + 1
-        : pointerTop + kTutorialPointerSize.height - 1;
+        ? pointerTop - bubbleHeight + pointerOverlap
+        : pointerTop + pointerSize.height - pointerOverlap;
 
     final (bubbleLeft, bubbleRight) = _bubbleHorizontalInsets(
       overlayWidth: overlaySize.width,
       pointerLeft: pointerLeft,
+      pointerWidth: pointerSize.width,
+      maxWidth: bubbleMaxWidth,
     );
 
     return TutorialLayout._(
@@ -60,6 +70,7 @@ class TutorialLayout {
       bubbleTop: bubbleTop,
       bubbleLeft: bubbleLeft,
       bubbleRight: bubbleRight,
+      pointerX: pointerLeft + pointerSize.width / 2 - bubbleLeft,
     );
   }
 
@@ -78,31 +89,41 @@ class TutorialLayout {
   /// Distance from the right edge of the overlay to the bubble.
   final double bubbleRight;
 
-  /// The bubble normally keeps [kTutorialHorizontalPadding] on both sides.
-  /// When the pointer gets closer than that to either edge, the bubble is
-  /// shifted towards that edge so the pointer stays at least
-  /// [kTutorialPointerToCornerMinDistance] from the bubble's corner. The sum of
-  /// both insets stays constant, so the bubble keeps its width.
+  /// Horizontal centre of the pointer, from the bubble's left edge.
+  final double pointerX;
+
+  /// The bubble normally keeps [kTutorialHorizontalPadding] on both sides
+  /// (centred on the pointer when [maxWidth] makes it narrower). When the
+  /// pointer gets closer than that to either edge, the bubble is shifted
+  /// towards that edge so the pointer stays at least
+  /// [kTutorialPointerToCornerMinDistance] from the bubble's corner. The
+  /// bubble keeps its width.
   static (double left, double right) _bubbleHorizontalInsets({
     required double overlayWidth,
     required double pointerLeft,
+    required double pointerWidth,
+    required double? maxWidth,
   }) {
-    const threshold =
-        kTutorialHorizontalPadding + kTutorialPointerToCornerMinDistance;
-    const totalInset = kTutorialHorizontalPadding * 2;
+    final available = overlayWidth - kTutorialHorizontalPadding * 2;
+    final width = math.max(0.0, math.min(available, maxWidth ?? available));
 
-    if (pointerLeft <= threshold) {
-      final left = pointerLeft - kTutorialPointerToCornerMinDistance;
-      return (left, totalInset - left);
-    }
+    // Centred on the pointer, then kept inside the margins.
+    var left = pointerLeft + pointerWidth / 2 - width / 2;
+    left = left.clamp(
+      kTutorialHorizontalPadding,
+      math.max(
+        kTutorialHorizontalPadding,
+        overlayWidth - kTutorialHorizontalPadding - width,
+      ),
+    );
 
-    final pointerRight =
-        overlayWidth - pointerLeft - kTutorialPointerSize.width;
-    if (pointerRight <= threshold) {
-      final right = pointerRight - kTutorialPointerToCornerMinDistance;
-      return (totalInset - right, right);
-    }
+    // Then past the margins if the pointer would sit on a corner.
+    left = math.min(left, pointerLeft - kTutorialPointerToCornerMinDistance);
+    left = math.max(
+      left,
+      pointerLeft + pointerWidth + kTutorialPointerToCornerMinDistance - width,
+    );
 
-    return (kTutorialHorizontalPadding, kTutorialHorizontalPadding);
+    return (left, overlayWidth - left - width);
   }
 }

@@ -78,4 +78,53 @@ void main() {
       kTutorialHorizontalPadding * 2,
     );
   });
+
+  group('bubbleMaxWidth', () {
+    TutorialLayout narrow(double targetX) => TutorialLayout.compute(
+      overlaySize: overlaySize,
+      target: Rect.fromLTWH(targetX - 20, 100, 40, 40),
+      bubbleHeight: bubbleHeight,
+      bubbleMaxWidth: 200,
+    );
+
+    test('centres a narrower bubble on the pointer', () {
+      final layout = narrow(200);
+
+      expect(layout.bubbleLeft, 100);
+      expect(layout.bubbleRight, 100);
+      expect(layout.pointerX, 100);
+    });
+
+    test('keeps a narrower bubble inside the margins', () {
+      final layout = narrow(90);
+
+      expect(layout.bubbleLeft, kTutorialHorizontalPadding);
+      expect(layout.pointerX, 90 - kTutorialHorizontalPadding);
+    });
+
+    test('never wider than the overlay allows', () {
+      final layout = TutorialLayout.compute(
+        overlaySize: overlaySize,
+        target: const Rect.fromLTWH(180, 100, 40, 40),
+        bubbleHeight: bubbleHeight,
+        bubbleMaxWidth: 1000,
+      );
+
+      expect(layout.bubbleLeft, kTutorialHorizontalPadding);
+      expect(layout.bubbleRight, kTutorialHorizontalPadding);
+    });
+  });
+
+  test('pointer size and overlap place the bubble', () {
+    final layout = TutorialLayout.compute(
+      overlaySize: overlaySize,
+      target: const Rect.fromLTWH(180, 100, 40, 40),
+      bubbleHeight: bubbleHeight,
+      pointerSize: const Size(20, 10),
+      pointerOverlap: 4,
+    );
+
+    expect(layout.pointerOffset, Offset(190, 140 + kTutorialVerticalPadding));
+    expect(layout.bubbleTop, layout.pointerOffset.dy + 10 - 4);
+  });
 }

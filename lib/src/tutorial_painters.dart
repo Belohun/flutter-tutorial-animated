@@ -7,6 +7,7 @@ class TutorialBackgroundPainter extends CustomPainter {
     required this.hole,
     required this.holeRadius,
     required this.color,
+    this.passThroughHole = false,
   });
 
   /// Area left uncovered, in the painter's coordinates.
@@ -18,19 +19,29 @@ class TutorialBackgroundPainter extends CustomPainter {
   /// Colour of the covered area.
   final Color color;
 
+  /// Whether taps inside [hole] go through to whatever is below.
+  final bool passThroughHole;
+
+  RRect get _holeRRect => RRect.fromRectAndRadius(hole, holeRadius);
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = Path.combine(
       PathOperation.difference,
       Path()..addRect(Offset.zero & size),
-      Path()..addRRect(RRect.fromRectAndRadius(hole, holeRadius)),
+      Path()..addRRect(_holeRRect),
     );
 
     canvas.drawPath(path, Paint()..color = color);
   }
 
   @override
+  bool hitTest(Offset position) =>
+      !(passThroughHole && _holeRRect.contains(position));
+
+  @override
   bool shouldRepaint(TutorialBackgroundPainter oldDelegate) =>
+      oldDelegate.passThroughHole != passThroughHole ||
       oldDelegate.hole != hole ||
       oldDelegate.holeRadius != holeRadius ||
       oldDelegate.color != color;
