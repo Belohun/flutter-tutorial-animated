@@ -1,0 +1,27 @@
+name: flutter_tutorial_animated
+description: >-
+  Animated step-by-step tutorial overlay that spotlights widgets and explains
+  each one in a bubble pointing at it. Supports per-step animations.
+version: 0.1.0
+homepage: https://github.com/Belohun/flutter-tutorial-animated
+repository: https://github.com/Belohun/flutter-tutorial-animated
+issue_tracker: https://github.com/Belohun/flutter-tutorial-animated/issues
+topics:
+  - tutorial
+  - onboarding
+  - coach-mark
+  - showcase
+  - overlay
+
+environment:
+  sdk: ^3.10.0
+  flutter: ">=3.38.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
