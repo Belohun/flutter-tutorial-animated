@@ -17,6 +17,7 @@ class TutorialItem {
     this.targetKey,
     this.targetRect,
     this.barrier,
+    this.nextOnTargetTouch = false,
     this.beforeStep,
     this.animation,
     this.animationAnchorKey,
@@ -42,6 +43,15 @@ class TutorialItem {
   /// What the dimmed background does with taps during this step. Defaults
   /// to [Tutorial.barrier].
   final TutorialBarrier? barrier;
+
+  /// Whether touching the highlight moves the tutorial on, as Next does,
+  /// or completes it on the last step.
+  ///
+  /// It reacts as the finger lands, so the start of a drag counts as much
+  /// as a tap. The touch still reaches the app below wherever the
+  /// [barrier] lets taps through, so the user does what the step asks and
+  /// the bubble gets out of the way in one go.
+  final bool nextOnTargetTouch;
 
   /// Text shown in the bubble.
   final String description;

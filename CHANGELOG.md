@@ -1,3 +1,10 @@
+## 0.3.0
+
+* `TutorialItem.nextOnTargetTouch` moves the tutorial on, or completes it on
+  the last step, as soon as the user touches the highlight: a tap or the
+  start of a drag. The touch still reaches the app wherever the barrier lets
+  it through.
+
 ## 0.2.0
 
 * `TutorialStyle.bubbleBuilder` builds the bubble in place of the default
