@@ -7,7 +7,9 @@ cut-out, the pointer and the bubble.
 
 ## Features
 
-- Spotlights any widget by its `GlobalKey`, with an animated cut-out.
+- Spotlights any widget by its `GlobalKey`, or any area of the screen (a
+  sprite in a game, a region of a canvas) through a callback that it follows
+  as it moves.
 - Bubble placed below or above the target, whichever half of the screen it is
   in; the pointer stays on the target even next to the screen edges.
 - `beforeStep` callback per step, awaited before the step is shown — scroll the
@@ -15,15 +17,18 @@ cut-out, the pointer and the bubble.
 - Optional per-step illustrative `animation` (a Lottie, an animated hand, ...)
   drawn over the target and never stealing taps.
 - Waits for targets that are not laid out yet, with a timeout.
-- `TutorialStyle` for colours, text styles, icons, timing and highlight shape;
-  defaults follow your `Theme`.
+- `TutorialStyle` for colours, text styles, icons, timing and highlight shape,
+  or builders that replace the bubble and the pointer with your own.
+- Barriers that let taps through the highlight, or everywhere, so the user
+  can do what a step describes.
+- Steps moved on from code, for tutorials that wait for the user to act.
 - Tells you how it ended: completed, closed, or target not found.
 
 ## Getting started
 
 ```yaml
 dependencies:
-  flutter_tutorial_animated: ^0.1.0
+  flutter_tutorial_animated: ^0.2.0
 ```
 
 The tutorial uses Material widgets, so it needs a `MaterialApp` (or an
@@ -101,6 +106,68 @@ Tutorial(
   ),
   items: [...],
 );
+```
+
+### Your own bubble and pointer
+
+Replace the bubble with anything that matches your app. It is given the
+width the layout allows and sizes its own height; `TutorialBubble` says
+where the pointer meets it and carries the step's callbacks.
+
+```dart
+Tutorial(
+  style: TutorialStyle(
+    bubbleMaxWidth: 280,
+    pointerSize: const Size(22, 14),
+    pointerOverlap: 4,
+    pointerBuilder: (context, direction) => CustomPaint(
+      painter: MyTailPainter(pointsUp: direction == AxisDirection.up),
+    ),
+    bubbleBuilder: (context, bubble) => MyCard(
+      text: bubble.description,
+      onNext: bubble.isLast ? null : bubble.next,
+      onClose: bubble.close,
+    ),
+  ),
+  items: [...],
+);
+```
+
+Extend `TutorialItem` to give your bubble more than a description, such as
+a title, and read it back from `bubble.item`.
+
+### Targets that are not widgets
+
+`targetRect` reports the area to highlight in global coordinates, or `null`
+while it is off screen. It is read on every frame of the step, so the
+highlight follows a target that moves, such as a sprite in a game:
+
+```dart
+TutorialItem(
+  description: 'Repair the ruin.',
+  targetRect: () => game.screenRectOf(ruin),
+),
+```
+
+### Letting the user act
+
+By default the dimmed background takes every tap. `TutorialBarrier` changes
+that for the whole tutorial or for one step:
+
+- `passThroughHighlight`: taps inside the highlight reach the app.
+- `transparent`: every tap outside the bubble reaches the app.
+
+Pair it with `Tutorial.start`, which returns a `TutorialSession`, to move on
+once the user has done what the step asks:
+
+```dart
+final session = Tutorial(
+  barrier: TutorialBarrier.passThroughHighlight,
+  items: [TutorialItem(targetKey: _buildKey, description: 'Build a tower.')],
+).start(context);
+
+// Later, when the tower is built:
+session.next();
 ```
 
 See [`example/`](example) for a complete app.
